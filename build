@@ -1,0 +1,5 @@
+#!/bin/bash
+
+rm bin/sniffer.so
+
+$CXX src/sniffer.cc src/render.cc -g -shared -o bin/sniffer.so -fPIC -ldl -std=c++20 -Isrc -Ilib/imgui -lGLEW

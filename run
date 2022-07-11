@@ -1,0 +1,4 @@
+#!/bin/bash
+
+./build && LD_PRELOAD=bin/sniffer.so rpcs3
+

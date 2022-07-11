@@ -1,0 +1,34 @@
+{
+    "env": {
+        "myDefaultIncludePath": [
+            "${workspaceFolder}",
+            "${workspaceFolder}/src"
+        ],
+        "myCompilerPath": "/usr/bin/clang++"
+    },
+    "configurations": [
+        {
+            "name": "Linux",
+            "intelliSenseMode": "linux-clang-x64",
+            "includePath": [
+                "${myDefaultIncludePath}",
+                "/usr/include",
+                "${workspaceFolder}/lib/imgui"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++20",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "compilerArgs": [],
+            "configurationProvider": "ms-vscode.makefile-tools"
+        }
+    ],
+    "version": 4
+}
