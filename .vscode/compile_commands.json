@@ -1,0 +1,6 @@
+[
+    { "directory": "${workspaceRoot}",
+      "arguments": ["/usr/bin/clang++", "-Irelative", "-DSOMEDEF=With spaces, quotes and \\-es.", "-c", "-o", "file.o", "file.cc"],
+      "file": "file.cc"
+    }
+  ]

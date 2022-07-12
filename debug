@@ -2,5 +2,5 @@
 
 ./build
 
-gdb LD_PRELOAD=bin/sniffer.so rpcs3
+gdb LD_PRELOAD=bin/sly_cooper_hook.so rpcs3
 

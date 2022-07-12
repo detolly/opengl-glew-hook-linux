@@ -1,28 +1,12 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 
-#include <atomic>
 #include <cstdio>
 #include <cstring>
 #include <string>
-#include <string_view>
 
 #include <dlfcn.h>
 
-#include <hooks.h>
-#include <render.h>
-
 FILE* wal_fp{ nullptr };
 int wal_fd{ 0 };
-
-template<typename... Args>
-void print_header(std::string_view view, Args&&... args)
-{
-    puts("\n ********************* ");
-    printf(view.data(), args...);
-    puts(" *********************\n\n");
-}
 
 int (*old_open)(const char*, int, mode_t) = nullptr;
 #undef open
@@ -126,61 +110,3 @@ extern "C" ssize_t lseek(int fd, off_t offset, int whence)
 
     return ret;
 }
-
-namespace hook
-{
-    void setup_hook()
-    {
-
-        //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-        init();
-
-        hook_glewMultiDrawArrays([](GLenum mode, const GLint *first, const GLsizei *count, GLsizei drawcount) {
-            
-            // print_header("%s", "glMultiDrawArrays");
-
-            get_original_glewMultiDrawArrays()(mode, first, count, drawcount);
-        });
-
-        hook_glewUseProgram([](GLuint program) {
-
-            // print_header("glUseProgram: %d", program);
-
-            // if (program == 50) {
-            //     return;
-            // }
-
-            get_original_glewUseProgram()(program);
-        });
-    }
-}
-
-void(*original_glXSwapBuffers)(void*, unsigned long);
-#undef glXSwapBuffers
-extern "C" void glXSwapBuffers(void* display, unsigned long drawable_id)
-{
-    if (original_glXSwapBuffers == nullptr) {
-        original_glXSwapBuffers = (decltype(original_glXSwapBuffers))dlsym(RTLD_NEXT, "glXSwapBuffers");
-    }
-
-    //printf("glXSwapBuffers: %p %lu\n", display, drawable_id);
-
-    original_glXSwapBuffers(display, drawable_id);
-}
-
-void(*original_glClear)(GLbitfield);
-#undef glClear
-extern "C" void glClear(GLbitfield mask)
-{
-    if (original_glClear == nullptr) {
-        original_glClear = (decltype(original_glClear))dlsym(RTLD_NEXT, "glClear");
-    }
-    
-    glDisable(GL_DEPTH_TEST);
-    glDepthFunc(GL_GREATER);
-
-    //printf("glXSwapBuffers: %p %lu\n", display, drawable_id);
-
-    original_glClear(mask);
-}
-

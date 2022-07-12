@@ -1,0 +1,7 @@
+#!/bin/bash
+
+rm bin/hook_generator
+rm bin/*.a
+rm bin/*.so
+
+rm bin/obj/*

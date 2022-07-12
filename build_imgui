@@ -1,0 +1,19 @@
+#!/bin/bash
+
+mkdir bin/obj 2>/dev/null
+
+rm bin/hook_generator 2>/dev/null
+
+CXX=g++
+AR=ar
+
+echo "[+] Building imgui.o"
+$CXX src/imgui.cc -c -o bin/obj/imgui.o -fPIC -std=c++20 -Isrc -Ilib/imgui
+
+echo "[+] Building imgui_opengl.o"
+$CXX lib/imgui/backends/imgui_impl_opengl3.cpp -c -o bin/obj/imgui_opengl.o -fPIC -std=c++20 -Isrc -Ilib/imgui
+
+echo "[+] Archiving libhooks.a"
+$AR rcs bin/libimgui.a bin/obj/imgui.o bin/obj/imgui_opengl.o
+
+echo "[+] Done."

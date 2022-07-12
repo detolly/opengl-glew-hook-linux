@@ -1,3 +1,2 @@
-.ignore
-sniffer.so
-hook_generator
+!.ignore
+*

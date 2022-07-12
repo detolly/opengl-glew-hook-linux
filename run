@@ -1,4 +1,4 @@
 #!/bin/bash
 
-./build && LD_PRELOAD=bin/sniffer.so rpcs3
+./build && LD_PRELOAD=bin/hooker.so rpcs3
 
