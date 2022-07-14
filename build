@@ -2,22 +2,27 @@
 
 rm bin/hooker.so 2>/dev/null
 
+#CXX=g++
+
 echo "[+] Building hooker.so"
 $CXX                                            \
     src/sly_cooper.cc                           \
     src/read_hooks.cc                           \
     bin/libimgui.a                              \
        											\
+    -flto										\
+    -MJ .vscode/sly_cooper.o.json				\
     -g											\
     -shared                                     \
     -o bin/hooker.so 		                    \
     -fPIC                                       \
     -std=c++20                                  \
                                                 \
-    -Isrc                                       \
-    -Ilib/imgui                                 \
+    -I./src                                       \
+    -I./lib/imgui                                 \
                                                 \
     -lGLEW                                      \
     -ldl                                        \
+    -lfmt                                       \
 
 echo "[+] Done building."

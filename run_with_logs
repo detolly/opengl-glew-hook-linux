@@ -2,5 +2,5 @@
 
 ./build && \
 sed -e '1s/^/[\'$'\n''/' -e '$s/,$/\'$'\n'']/' .vscode/*.o.json > .vscode/compile_commands.json &&\
-LD_PRELOAD=bin/hooker.so rpcs3
+LD_PRELOAD=bin/hooker.so rpcs3 > logs/run_log_$(date -Isecond).log
 

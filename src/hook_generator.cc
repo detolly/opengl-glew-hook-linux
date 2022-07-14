@@ -38,10 +38,15 @@ int main(int argc, const char** argv)
 
 #include <dlfcn.h>
 
+#include <fmt/core.h>
+
 #define VISIBLE_HOOK __attribute__((visibility("default")))
 #define GLAPI static
 
 #include <cstdio>
+#include <iostream>
+#include <string_view>
+#include <type_traits>
 
 )ez";
 
@@ -178,6 +183,50 @@ int main(int argc, const char** argv)
         return std::string();
     };
 
+    const auto get_correct_forward_call_from_arguments = [&get_string_view](const auto& args_list)
+    {
+        std::stringstream ss;
+        std::size_t i = 0;
+        auto range = std::views::split(args_list, ", "sv) | std::views::transform(get_string_view);
+        for(auto argument : range)
+        {
+            if (!argument.compare("void"))
+                return std::string();
+
+            const auto last_space = argument.rfind(" ");
+            auto str = argument.substr(last_space + 1);
+            if (*str.begin() == '*')
+                str = { str.begin()+1, str.end() };
+            ss << "get_correct_arg(" << str << ")";
+            ss << ", ";
+            i++;
+        }
+        if (i) {
+            const auto string = ss.str();
+            return string.substr(0, string.size()-2);
+        }
+        
+        return std::string();
+    };
+
+    std::cout << R"asd(
+    template<typename T>
+    constexpr auto get_correct_arg(const T* arg)
+    {
+        return static_cast<const void*>(arg);
+    };
+    template<typename T>
+    constexpr auto get_correct_arg(T* arg)
+    {
+        return static_cast<void*>(arg);
+    };
+    template<typename T>
+    constexpr auto get_correct_arg(T arg) requires(!std::is_pointer_v<T>)
+    {
+        return std::forward<T>(arg);
+    };
+    )asd";
+
     for(const auto& f : gl_functions)
     {
         const auto function_ptr_type_with_name = [](const auto& f, const std::string& name) {
@@ -189,7 +238,22 @@ int main(int argc, const char** argv)
         std::cout << "static " << f.function_name << "_t __hooked_" << f.function_name << " = nullptr;\n";
         //std::cout << "extern \"C\"\n{\n";
         std::cout << "extern \"C\" __attribute__((visibility(\"default\"))) " << f.return_type << " " << f.function_name << "(" << f.args_list << ")\n{\n";
-        //std::cout << "\tputs(\"" << f.function_name << "\");\n";
+        std::cout << "#if defined(PRINT_" << f.function_name << ") || defined(PRINT_ALL)\n\tusing namespace std::string_view_literals;\n";
+        std::cout << "\tfmt::print(\"" << f.function_name << ": ";
+        int i = 0;
+        for(const auto _ : std::views::split(f.args_list, ", ") | std::views::transform(get_string_view))
+        {
+            if (_ == "void")
+                continue;
+            std::cout << "{} ";
+            i++;
+        }
+        std::cout << "\\n\"";
+        if (i > 0) 
+            std::cout << ", " << get_correct_forward_call_from_arguments(f.args_list) << ");\n";
+        else
+            std::cout << ");\n";
+        std::cout << "#endif\n";
         std::cout << "\tif(__hooked_" << f.function_name << " == nullptr)\n";
         bool is_void = f.return_type == "void";
         if (is_void)
@@ -223,15 +287,15 @@ namespace hook
         std::cout << '\t';
         const auto __original_name = "original_" + f.function_name.substr(2);
         std::cout << "static " << f.return_type << " " << __original_name << ";\n";
-        std::cout << "static void hook_" << f.function_name.substr(2) << "(" << f.return_type << " " << " func" << ") { " << __original_name << " = " << f.function_name << "; "
+        std::cout << "static inline void hook_" << f.function_name.substr(2) << "(" << f.return_type << " " << " func" << ") { " << __original_name << " = " << f.function_name << "; "
             << f.function_name << " = func;" << " }" << std::endl;
-        std::cout << "static " << f.return_type << " get_" << __original_name << "() { return " << __original_name << "; }\n";
+        std::cout << "[[nodiscard]] static inline " << f.return_type << " get_" << __original_name << "() { return " << __original_name << "; }\n";
     }
 
     for(const auto& f : gl_functions)
     {
-        std::cout << "static " << f.function_name << "_t" << " get_original_" << f.function_name << "() { return __original_" << f.function_name << "; }\n";
-        std::cout << "static void hook_" << f.function_name << "(" << f.function_name << "_t func) { __hooked_" << f.function_name << " = func; }\n";
+        std::cout << "[[nodiscard]] static inline " << f.function_name << "_t" << " get_original_" << f.function_name << "() { return __original_" << f.function_name << "; }\n";
+        std::cout << "static inline void hook_" << f.function_name << "(" << f.function_name << "_t func) { __hooked_" << f.function_name << " = func; }\n";
     }
 
     std::cout <<
@@ -292,7 +356,7 @@ VISIBLE_HOOK void glXSwapBuffers(void* display, unsigned long drawable_id)
         original_glXSwapBuffers = (decltype(original_glXSwapBuffers))dlsym(RTLD_NEXT, "glXSwapBuffers");
     }
 
-    printf("glXSwapBuffers: %p %lu\n", display, drawable_id);
+    //fmt::print("{:*^20}", fmt::format("glXSwapBuffers: {} {}\n", display, drawable_id));
     hook::render_tick();
 
     original_glXSwapBuffers(display, drawable_id);
